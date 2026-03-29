@@ -1,2 +1,0 @@
-cargo:rustc-cfg=has_std
-cargo:rerun-if-changed=/Users/0zituryoku/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/indexmap-1.3.2/build.rs

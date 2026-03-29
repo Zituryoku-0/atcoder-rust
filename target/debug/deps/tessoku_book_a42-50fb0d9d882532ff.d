@@ -1,5 +1,0 @@
-/Users/0zituryoku/workspace/atcoder-rust/target/debug/deps/tessoku_book_a42-50fb0d9d882532ff.d: src/bin/a42.rs
-
-/Users/0zituryoku/workspace/atcoder-rust/target/debug/deps/libtessoku_book_a42-50fb0d9d882532ff.rmeta: src/bin/a42.rs
-
-src/bin/a42.rs:
