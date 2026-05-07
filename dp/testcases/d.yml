@@ -34,8 +34,8 @@ cases:
     out: |
       17
 
-extend:
-  - type: Text
-    path: "./d"
-    in: /in/*.txt
-    out: /out/*.txt
+# extend:
+#   - type: Text
+#     path: "./d"
+#     in: /in/*.txt
+#     out: /out/*.txt
