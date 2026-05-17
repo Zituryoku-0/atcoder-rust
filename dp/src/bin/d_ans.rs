@@ -1,3 +1,4 @@
+use im_rc::hashmap::Values;
 use proconio::{input, marker::Chars};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -8,12 +9,9 @@ fn main() {
     input! {
         n: usize,
         w: usize,
-        items: [(usize,usize); n],
+        items: [(usize, i64);n],
     }
-
-    // 重さをインデックスに価値をdpする
-    let mut dp = vec![vec![0usize; w + 1]; n + 1];
-
+    let mut dp = vec![vec![0_i64; w + 1]; n + 1];
     for i in 0..n {
         let (weight, value) = items[i];
         for j in 0..=w {
@@ -26,6 +24,5 @@ fn main() {
             }
         }
     }
-
     println!("{}", dp[n][w]);
 }
