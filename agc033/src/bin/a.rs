@@ -5,31 +5,25 @@ use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::println;
 
-#[path = "../../../lib/lib.rs"]
-mod lib;
-
 const DI: [isize; 4] = [-1, 0, 1, 0];
 const DJ: [isize; 4] = [0, -1, 0, 1];
 
 fn main() {
     input! {
-        h: i32,
-        w: i32,
-        d: i32,
-        s: [Chars; h],
+        h: usize,
+        w: usize,
+        a: [Chars; h],
     }
 
     let mut queue = VecDeque::new();
+    let mut inf = i32::MAX;
+    let mut dist = vec![vec![inf; w]; h];
 
-    let inf = 1001001001;
-
-    let mut dist = vec![vec![inf; w as usize]; h as usize];
-
-    // dist0を特定する
+    // 黒色マスの特定（distが0）
     for i in 0..h {
         for j in 0..w {
-            if s[i as usize][j as usize] == 'H' {
-                dist[i as usize][j as usize] = 0;
+            if a[i][j] == '#' {
+                dist[i][j] = 0;
                 queue.push_back((i, j));
             }
         }
@@ -37,11 +31,13 @@ fn main() {
 
     // 多始点BFS
     while let Some((i, j)) = queue.pop_front() {
+        // 上下左右を黒色にする
+        // 行の色変え
         for v in 0..4 {
             let mut ni = i as isize + DI[v];
             let mut nj = j as isize + DJ[v];
 
-            // グリッド範囲外はスキップ
+            // グリッドの範囲外ならスキップ
             if ni < 0 || nj < 0 || ni >= h as isize || nj >= w as isize {
                 continue;
             }
@@ -49,30 +45,22 @@ fn main() {
             let ni = ni as usize;
             let nj = nj as usize;
 
-            // infでなければ、更新済なのでスキップ
+            // すでにdistが更新されていればスキップ
             if dist[ni][nj] != inf {
                 continue;
             }
 
-            // '#'であれば壁なのでスキップ
-            if s[ni][nj] == '#' {
-                continue;
-            }
-
-            // println!("dist[{}][{}]：{}", i, j, dist[i as usize][j as usize] + 1);
-            // そのマスに距離を+1で追加し、キューにも追加
-            dist[ni][nj] = dist[i as usize][j as usize] + 1;
-            queue.push_back((ni as i32, nj as i32));
+            dist[ni][nj] = dist[i][j] + 1;
+            queue.push_back((ni, nj));
         }
     }
 
     let mut ans = 0;
     for i in 0..h {
         for j in 0..w {
-            if dist[i as usize][j as usize] <= d {
-                ans += 1;
-            }
+            ans = ans.max(dist[i][j]);
         }
     }
+
     println!("{}", ans);
 }
