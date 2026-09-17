@@ -11,6 +11,11 @@ use std::println;
 mod lib;
 
 /**
+*【問題にかかった時間（ACできたか問わない）】
+・約40分
+【ACできたか？】
+・できなかった
+*
 * 【問題の目的】
 * ・最終的に何を求める問題か
 *
@@ -44,13 +49,13 @@ mod lib;
 fn main() {
     input! {
         n: usize,
-        a: [usize; n],
+        a: [i64; n],
         m: usize,
-        b: [usize; m],
+        b: [i64; m],
         l: usize,
-        c: [usize; l],
+        c: [i64; l],
         q: usize,
-        x: [usize; q],
+        x: [i64; q],
     }
 
     let mut map = HashMap::new();
@@ -59,11 +64,17 @@ fn main() {
     }
 
     for i in 0..q {
+        let mut check = false;
         for j in 0..n {
-            let mut check = false;
+            if x[i] - a[j] < 0 {
+                continue;
+            }
             for k in 0..m {
+                if x[i] - (a[j] + b[k]) < 0 {
+                    continue;
+                }
                 // x[q - (a[j] + b[k])]が存在すればそのまま出力する
-                if let Some(v) = map.get(&x[q - (a[j] + b[k])]) {
+                if let Some(v) = map.get(&(x[i] - (a[j] + b[k]))) {
                     println!("Yes");
                     check = true;
                     break;
@@ -73,6 +84,8 @@ fn main() {
                 break;
             }
         }
-        println!("No");
+        if !check {
+            println!("No");
+        }
     }
 }
