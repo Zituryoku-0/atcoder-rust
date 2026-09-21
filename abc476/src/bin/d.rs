@@ -4,134 +4,106 @@ use std::collections::BinaryHeap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::io::{self, BufWriter, Write};
-use std::print;
 use std::println;
 
 #[path = "../../../lib/lib.rs"]
 mod lib;
 
 /**
- * 典型的なDPな感じがする
- * 最終的に何を求めたい？
- * →商品数の最大値(買えたの最大値)
+ * 解説
+ * まずドリンクを全て買い、残ったお金でデザートを買えば良い
+ * ここでのポイントは、ドリンクを全探索する、デザートは累積和を二分探索することで、計算量を抑えることができる
+ * o(m) + o(logn) + o(n)
  *
- * 紙幣が1ドルと、Kドル
- * N個のデザート、M個のドリンク
+ * 全体のアルゴリズム
+ * 1.A（ドリンク）、B（デザート）を昇順ソートする
+ * 2.Aの価格の累積和を作る
+ * 3.Bの価格の累積和を作る
+ * 4.各B[i]に必要なKドル紙紙幣を計算する
+ * 5.その累積和も作る
+ * 6.ドリンクを0..=m個買う場合を全探索する
+ * 7.Kドル紙幣が足りるか確認
+ * 8.残りの総額を計算
+ * 9.デザートを何個買えるか二分探索
+ * 10.デザート数 + ドリンク数の最大値を更新
  *
- * O(N + M)で終わらせたいが全探索
- *
- * デザートは、両方使えるけど、ドリンクがKドル紙幣しか使えないので、ドリンクを優先して買ってみる
- *
- * ソート：nlogn + mlogm
- *
- * 優先してドリンクを買いに行く
- * 全部ドリンクを買いに行った、もしくは、ドリンクの値段 / K > Kで買い物できなくなったら、デザートを買いに行く
- *
- * ドリンクとデザートのKドルの使用量を考える必要がある
- * 極端にドリンクが高いと、Kドル紙幣を無駄使いすることになる
- * デザートをまず全ての1ドル紙幣で買い物する
- * 1ドル紙幣を使い切った状態で、デザートとドリンクのKドルの使用量を比較する
- *
- * ドリンクが極端に高いと、コスパが悪くなる
- *  (b_ary[i] / k + 1) <= (one_shihei + k * using - b_ary[i]) / k ならばドリンクを買った方が良い
- * そうでないなら、デザートを買った方が良い
  *
  */
 fn main() {
     input! {
         n: usize,
         m: usize,
-        k: usize,
-        x: usize,
-        y: usize,
+        k: i64,
+        x: i64,
+        y: i64,
+        mut a: [i64; n],
+        mut b: [i64; m],
     }
 
-    let mut a_ary: BinaryHeap<Reverse<usize>> = BinaryHeap::new();
-    let mut b_ary: BinaryHeap<Reverse<usize>> = BinaryHeap::new();
+    // 安い商品から選べるようにソート
+    a.sort();
+    b.sort();
+
+    // Aの価格の累積和
+    // prefix_a[i] = Aの安い方からi個買った時の合計価格
+    let mut prefix_a = vec![0_i64; n + 1];
 
     for i in 0..n {
-        input! {
-            a: usize,
-        }
-        a_ary.push(Reverse(a));
+        prefix_a[i + 1] = prefix_a[i] + a[i];
     }
+
+    // Bの価格の累積和
+    let mut prefix_b = vec![0_i64; m + 1];
+
+    // Bを買うために必要なKドル紙幣の累積和
+    let mut prefix_k = vec![0_i64; m + 1];
 
     for i in 0..m {
-        input! {
-            b: usize,
-        }
-        b_ary.push(Reverse(b));
+        prefix_b[i + 1] = prefix_b[i] + b[i];
+
+        // ceil(b[k] / k)
+        let required_k = (b[i] - 1) / k + 1;
+
+        prefix_k[i + 1] = prefix_k[i] + required_k;
     }
 
-    let mut one_shihei = x;
-    let mut k_shihei = y;
-    let mut ans = 0;
+    // 手持ちのお金の総額
+    let total_money = x + k * y;
 
-    // まずはデザートを買い切る
-    for i in 0..n {
-        // Kドル紙幣の枚数 < 購入できる一番やすいドリンクの値段 / K
-        let Reverse(using) = a_ary.pop().unwrap();
-        // println!("1ドルのusing：{}", using);
+    let mut ans = 0_usize;
 
-        // 買えなかった場合は戻しておく
-        if one_shihei < using {
-            a_ary.push(Reverse(using));
+    // ドリンクをdrink_count個買う場合を全探索
+    for drink_count in 0..=m {
+        // Kドル紙幣が足りない
+        if prefix_k[drink_count] > y {
             break;
         }
 
-        one_shihei -= using;
-        ans += 1;
-    }
+        // ドリンクを買った後の残金
+        let remain = total_money - prefix_b[drink_count];
 
-    // 1ドルで買える分だけ買った状態から、デザートとドリンクを比較して買う
-    while let (Some(Reverse(dezert)), Some(Reverse(drink))) = (a_ary.pop(), b_ary.pop()) {
-        // Kドル紙幣の枚数 < 購入できる一番やすいドリンクの値段 / K
-        let using = drink / k + 1;
-        //  (b_ary[i] / k + 1) <= (one_shihei + k * using - b_ary[i]) / k ならばドリンクを買った方が良い
-        if using <= (one_shihei + k * using - drink) / k {
-            if k_shihei < using {
-                break;
+        if remain < 0 {
+            break;
+        }
+
+        // prefix_a[dessert_count] <= remain
+        // となる最大のdessert_countを二分探索
+        let mut ok = 0_usize;
+        let mut ng = n + 1;
+
+        while ng - ok > 1 {
+            let mid = (ok + ng) / 2;
+
+            if prefix_a[mid] <= remain {
+                ok = mid;
+            } else {
+                ng = mid;
             }
-            // println!("kドルのusing：{}", using);
-
-            k_shihei -= using;
-            one_shihei += k * using - drink;
-            ans += 1;
-            // ドリンクを買った場合は、デザートを戻す
-            a_ary.push(Reverse(dezert));
-        } else {
-            // 買えなかった場合は戻しておく
-            if one_shihei < dezert {
-                a_ary.push(Reverse(using));
-                break;
-            }
-
-            one_shihei -= dezert;
-            ans += 1;
-            // デザートを買った場合は、ドリンクを戻す
-            b_ary.push(Reverse(drink));
-        }
-    }
-
-    while let Some(Reverse(drink)) = b_ary.pop() {
-        let using = drink / k + 1;
-        if k_shihei < using {
-            break;
-        }
-        k_shihei -= drink / k + 1;
-        one_shihei += k * using - drink;
-        ans += 1;
-    }
-
-    while let Some(Reverse(dezart)) = a_ary.pop() {
-        if one_shihei < dezart {
-            a_ary.push(Reverse(dezart));
-            break;
         }
 
-        one_shihei -= dezart;
-        ans += 1;
-    }
+        let dessert_count = ok;
 
+        ans = ans.max(drink_count + dessert_count);
+    }
     println!("{}", ans);
 }

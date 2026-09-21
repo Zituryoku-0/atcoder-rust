@@ -4,6 +4,7 @@ use std::collections::BinaryHeap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::io::{self, BufWriter, Write};
+use std::print;
 use std::println;
 
 #[path = "../../../lib/lib.rs"]
@@ -14,5 +15,11 @@ fn main() {
         s: String,
     }
 
-    println!("{}", if s.ends_with('e') { s + "r" } else { s + "er" });
+    let len = s.len() - 1;
+    let chrs: Vec<char> = s.chars().collect();
+    if chrs[len] == 'e' {
+        println!("{}", s + "r");
+    } else {
+        println!("{}", s + "er");
+    }
 }
