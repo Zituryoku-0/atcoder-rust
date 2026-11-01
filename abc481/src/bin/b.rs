@@ -1,16 +1,49 @@
-use ordered_float::FloatIsNan;
 use proconio::{input, marker::Chars};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
-use std::io::SeekFrom::Current;
 use std::io::{self, BufWriter, Write};
 use std::println;
 
 /**
- * 移動先もしくは、移動中にkが含まれれば良い
- * A→Bの幅を見てその中にkがあればカウントする
+ * 解説
+ * 知りたいのはkがこの範囲に入っているかだけのため、
+ * let low = a[i-1].min(a[i]);
+ * let high = a[i-1].max(a[i]);
+ *
+ * if low <= k && k <= high {
+ *  // y = kと交わる
+ * }
+ * だけで判定できる
+ * 以下は競プロではかなり重要な考え方である
+ * ・区間内に特定の値が存在するか調べたいだけなら、区間を列挙しない.
+ *
+ * 共有端点をどう処理するか？
+ * 1.A_i == Kになっている頂点を数える
+ * 2.線分の内部でKを跨ぐ場合を数える
+ *
+ * 例えば A = [1, 3, 1, 5, 1]
+ * K = 3の時
+ *
+ * 頂点
+ * 1
+ * 3　←Kなので+1
+ * 1
+ * 5
+ * 1
+ *
+ * 線分の内部
+ * 1 → 3 ：終点なので数えない
+ * 3 → 1 ：始点なので数えない
+ * 1 → 5 ：途中で3を通る→ +1
+ * 5 → 1 ：途中で3を通る→ +1
+ *
+ * 合計
+ * 1 + 1 + 1 = 3となる
+ *
+ * ポイントは、頂点だけで数え、その後跨ぐものを数えれば良い
+ *
  *
  */
 fn main() {
@@ -21,54 +54,20 @@ fn main() {
     }
 
     let mut ans = 0;
-    let mut current_goal = 1000;
-    let mut check = false;
-    for i in 1..n {
-        let mut current_nums = Vec::new();
-        if a[i] == a[i - 1] && a[i] == k {
+
+    // y = Kの頂点
+    for &x in &a {
+        if x == k {
             ans += 1;
-            check = true;
-            continue;
-        }
-        if a[i] > a[i - 1] {
-            for j in a[i - 1]..=a[i] {
-                if current_goal == j {
-                    continue;
-                }
-                current_nums.push(j);
-            }
-            // println!("{:?}", current_nums);
-
-            for num in current_nums {
-                if num == k {
-                    ans += 1;
-                }
-            }
-            check = false;
-            current_goal = a[i];
-        } else {
-            for j in (a[i]..=a[i - 1]).rev() {
-                if current_goal == j {
-                    continue;
-                }
-                current_nums.push(j);
-            }
-
-            // println!("{:?}", current_nums);
-            for num in current_nums {
-                if num == k {
-                    ans += 1;
-                }
-            }
-            check = false;
-
-            current_goal = a[i];
         }
     }
 
-    if check {
-        println!("{}", ans + 1);
-    } else {
-        println!("{}", ans);
+    // 線分の内部でy = Kを通過するケース
+    for i in 1..n {
+        if (a[i - 1] < k && k < a[i]) || (a[i] < k && k < a[i - 1]) {
+            ans += 1;
+        }
     }
+
+    println!("{}", ans);
 }
